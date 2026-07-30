@@ -13,9 +13,10 @@ const envSchema = z.object({
     .default('info'),
 
   // Optional for now.
-  // Features that require these should check for their existence.
-  GEMINI_API_KEY: z.string().optional(),
-  DISCORD_TOKEN: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(), // We'll need this later
+
+  DISCORD_TOKEN: z.string().min(1),
+  DISCORD_GUILD_ID: z.string().min(1),
 })
 
 // Validate environment variables.

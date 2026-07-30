@@ -1,4 +1,5 @@
-import { env } from './config/env.js'
+import { Athena } from './core/Athena.js'
 
-console.log('Environment:', env.NODE_ENV)
-console.log('Log Level:', env.LOG_LEVEL)
+const athena = new Athena()
+
+await athena.start()

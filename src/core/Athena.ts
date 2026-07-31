@@ -1,18 +1,27 @@
-import { DiscordClient } from '../discord/DiscordClient.js'
+import { buildSystemPrompt } from '../ai/prompts/SystemPrompt.js'
+import type { AIProvider } from '../ai/providers/AIProvider.js'
 
-// Top-level orchestrator. Owns and coordinates the app's services.
+/**
+ * Athena is the central AI assistant.
+ *
+ * Athena prepares prompts and delegates response generation
+ * to the configured AI provider.
+ */
 export class Athena {
-  private readonly discord: DiscordClient
+  constructor(private readonly provider: AIProvider) {}
 
-  constructor() {
-    this.discord = new DiscordClient()
-  }
+  /**
+   * Sends a user message to the configured AI provider
+   * and returns Athena's response.
+   */
+  async ask(message: string): Promise<string> {
+    const prompt = `
+${buildSystemPrompt()}
 
-  async start(): Promise<void> {
-    await this.discord.start()
-  }
+User:
+${message}
+`.trim()
 
-  async stop(): Promise<void> {
-    await this.discord.stop()
+    return this.provider.generateResponse(prompt)
   }
 }

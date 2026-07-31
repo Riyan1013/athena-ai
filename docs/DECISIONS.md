@@ -1,6 +1,8 @@
 # Athena Architecture Decision Records (ADRs)
 
-This document records important architectural decisions made throughout Athena's development.
+This document records the major architectural decisions made throughout the development of Athena AI.
+
+Each Architectural Decision Record (ADR) explains **what** was decided, **why** it was chosen, and serves as historical documentation for future development.
 
 ---
 
@@ -10,7 +12,7 @@ This document records important architectural decisions made throughout Athena's
 
 **Rationale:**
 
-- Single language for the entire backend.
+- Single language for the backend.
 - Excellent type safety.
 - Strong Discord ecosystem.
 - Easier long-term maintenance.
@@ -28,7 +30,7 @@ This document records important architectural decisions made throughout Athena's
 
 - Mature JavaScript/TypeScript runtime.
 - Excellent ecosystem.
-- Ideal for Discord bots and backend services.
+- Ideal for backend services.
 - Large community support.
 
 **Status:** ✅ Accepted
@@ -116,50 +118,96 @@ This document records important architectural decisions made throughout Athena's
 
 **Rationale:**
 
-- Free tier suitable for development.
-- Good performance and reasoning.
+- Generous free tier for development.
+- Strong reasoning capabilities.
 - Affordable starting point.
-- Future provider abstraction planned.
+- Easy to replace through provider abstraction.
 
 **Status:** ✅ Accepted
 
 ---
 
-## ADR-009 — Future AI Strategy
+## ADR-009 — Multi-Provider AI Strategy
 
-**Decision:** Multi-provider AI architecture
+**Decision:** Athena communicates through an AI provider abstraction.
 
 **Rationale:**
 
-- Athena should not depend on a single AI provider.
-- Additional providers can be integrated without changing the core architecture.
+Athena should never depend on a single AI model.
+
+Using an abstraction layer allows additional providers to be integrated without changing Athena's architecture.
 
 **Planned Providers:**
 
-- Ollama
+- Google Gemini
 - OpenAI
 - Anthropic Claude
+- Ollama
 
 **Status:** ✅ Accepted
 
 ---
 
-## ADR-010 — Project Architecture
+## ADR-010 — Platform-First Architecture
 
-**Decision:** Platform-first architecture
+**Decision:** Athena AI is an AI assistant platform rather than a Discord bot.
 
 **Rationale:**
 
-Athena is designed as an AI platform where Discord is the first client, not the core application.
+Athena AI is the product.
 
-This architecture allows Athena to expand to:
+Discord is only the first interface.
 
-- Discord
-- Web
-- Mobile
-- API
-- Future voice interfaces
+Future interfaces may include:
 
-without redesigning the core system.
+- Web Application
+- Mobile Application
+- Desktop Application
+- Portfolio Widget
+- REST API
+- Voice Interfaces
+
+Every interface communicates with Athena instead of implementing AI logic independently.
+
+This allows Athena to evolve across multiple platforms while maintaining a single source of intelligence.
+
+**Status:** ✅ Accepted
+
+---
+
+## ADR-011 — Interface Independence
+
+**Decision:** All interfaces communicate with Athena.
+
+**Rationale:**
+
+Business logic, AI orchestration, memory, and shared services belong inside Athena.
+
+Platform-specific modules such as Discord, Web, or Mobile should only contain interface-specific functionality.
+
+This ensures new interfaces can be added without duplicating AI logic.
+
+**Status:** ✅ Accepted
+
+---
+
+## ADR-012 — Separation of Responsibilities
+
+**Decision:** Athena coordinates the system instead of implementing every feature directly.
+
+**Rationale:**
+
+Athena acts as the central orchestrator.
+
+Individual modules remain responsible for their own concerns.
+
+Examples include:
+
+- AI Providers
+- Memory
+- Services
+- Database
+
+This keeps the architecture modular, testable, and maintainable as Athena grows.
 
 **Status:** ✅ Accepted

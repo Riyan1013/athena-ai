@@ -1,5 +1,5 @@
-import { Athena } from './core/Athena.js'
+import { AthenaApp } from './app/AthenaApp.js'
 
-const athena = new Athena()
+const app = new AthenaApp()
 
-await athena.start()
+await app.start()

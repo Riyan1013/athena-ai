@@ -1,42 +1,44 @@
-# Athena Architecture
+# Athena AI Architecture
 
 ## Overview
 
-Athena is a modular AI platform designed around a simple principle:
+Athena AI is a modular AI assistant platform built around a simple principle:
 
-> **Athena is the platform. Discord is only the first interface.**
+> **One assistant. Multiple interfaces.**
 
-The architecture separates the core intelligence from platform-specific integrations, allowing Athena to expand beyond Discord without major redesigns.
+Rather than embedding AI logic into individual applications, Athena centralizes intelligence so every interface shares the same AI capabilities, memory, and services.
+
+The Discord bot is the first interface to Athena, but the architecture is designed to support future applications such as a web app, mobile app, desktop app, portfolio widget, and API without duplicating business logic.
 
 ---
 
 # High-Level Architecture
 
 ```text
-                 +----------------------+
-                 |      Discord         |
-                 +----------------------+
-                            │
-                            ▼
-                 +----------------------+
-                 |   Discord Adapter    |
-                 +----------------------+
-                            │
-                            ▼
-                 +----------------------+
-                 |     Athena Core      |
-                 +----------------------+
-                  │      │        │
-          ┌───────┘      │        └────────┐
-          ▼              ▼                 ▼
-   AI Provider       Memory System     Services
-          │              │                 │
-          ▼              ▼                 ▼
-     Gemini API      SQLite/Postgres   Weather, PDF,
-                                      Search, etc.
+                      ATHENA AI
+              (Your Personal AI Assistant)
+
+        ┌──────────────┬──────────────┬──────────────┐
+        │              │              │              │
+        ▼              ▼              ▼              ▼
+   Discord Bot     Web App     Mobile App     Portfolio Widget
+        │              │              │              │
+        └──────────────┴──────────────┴──────────────┘
+                       │
+                       ▼
+                    Athena
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+        ▼              ▼              ▼
+   AI Providers     Memory        Services
+        │              │              │
+        ▼              ▼              ▼
+     Gemini      User Memory   Search, PDF,
+                               Images, Weather
 ```
 
-Future clients such as a web application, mobile application, or API will connect to the same Athena Core rather than implementing separate business logic.
+Every interface communicates with Athena rather than implementing AI logic independently. This ensures AI capabilities, memory, and shared services are implemented once and reused across every platform.
 
 ---
 
@@ -62,13 +64,15 @@ src/
 └── index.ts
 ```
 
+> **Note:** This represents the intended long-term architecture. Some modules will be introduced as Athena AI evolves.
+
 ---
 
 # Folder Responsibilities
 
 ## core/
 
-Athena's brain.
+Contains **Athena**, the central orchestrator of the platform.
 
 Responsible for:
 
@@ -76,9 +80,10 @@ Responsible for:
 - Personality
 - Decision-making
 - Prompt management
-- Future agent system
+- Future agent workflows
+- Coordinating memory and services
 
-The core must never depend directly on Discord.
+The core must remain independent of any interface such as Discord, Web, or Mobile.
 
 ---
 
@@ -92,27 +97,26 @@ Current provider:
 
 Future providers:
 
-- Ollama
 - OpenAI
 - Anthropic Claude
+- Ollama
 
-The rest of Athena communicates only with the AI abstraction layer.
+Athena communicates with AI providers through this module rather than interacting directly with any specific model.
 
 ---
 
 ## discord/
 
-Contains everything related to Discord.
+Provides the Discord interface for Athena.
 
-Examples:
+Responsible for:
 
-- Client
+- Discord client
+- Slash commands
 - Events
-- Slash Commands
-- Message Handling
-- Embeds
+- Interactions
 
-Discord-specific code must remain inside this module.
+Discord-specific code should remain inside this module. Shared business logic belongs inside Athena.
 
 ---
 
@@ -125,20 +129,22 @@ Future features include:
 - Long-term memory
 - User preferences
 - Conversation summaries
+- Semantic search
 - Embeddings
 
 ---
 
 ## services/
 
-Contains reusable capabilities such as:
+Contains reusable capabilities that can be used by any interface.
+
+Examples:
 
 - Weather
 - Calculator
 - PDF Analysis
 - Web Search
-
-These services should be reusable by any future platform.
+- Image Generation
 
 ---
 
@@ -172,15 +178,15 @@ Examples:
 
 ## utils/
 
-Contains only generic utility functions.
+Contains generic utility functions shared across the application.
 
-Utility functions that belong to a single feature should remain inside that feature's folder.
+Utility functions that belong to a single feature should remain inside that feature's module.
 
 ---
 
 ## types/
 
-Shared TypeScript interfaces and types.
+Shared TypeScript interfaces and type definitions.
 
 ---
 
@@ -188,38 +194,45 @@ Shared TypeScript interfaces and types.
 
 ## Platform First
 
-Athena is the product.
+Athena AI is the product.
 
-Discord is a client.
+Discord, Web, Mobile, Portfolio, Desktop, and future integrations are simply different interfaces through which users interact with Athena.
 
-Future platforms should integrate with Athena Core instead of duplicating business logic.
+---
+
+## Interface Independence
+
+Every interface communicates with Athena rather than implementing AI logic directly.
+
+Platform-specific code belongs inside its own module, while Athena owns shared intelligence, memory, AI providers, and services.
 
 ---
 
 ## Single Responsibility
 
-Every folder should have one clear purpose.
+Every folder and module should have one clear responsibility.
 
 ---
 
 ## Provider Abstraction
 
-Athena communicates with an AI provider interface rather than directly with Gemini.
+Athena communicates with an AI provider abstraction rather than directly with Gemini.
 
-This allows future AI providers to be added without changing the rest of the application.
+This allows new AI providers to be added without affecting the rest of the platform.
 
 ---
 
 ## Scalability
 
-The architecture is designed to support future expansion to:
+The architecture is designed to support future expansion including:
 
-- Web
-- Mobile
-- API
-- Voice
-- Multiple AI providers
-- Agent workflows
-- Knowledge retrieval (RAG)
+- Web Application
+- Mobile Application
+- Desktop Application
+- REST API
+- Voice Interfaces
+- Multiple AI Providers
+- Agent Workflows
+- Knowledge Retrieval (RAG)
 
-without major structural changes.
+without requiring major architectural changes.

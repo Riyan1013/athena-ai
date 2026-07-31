@@ -2,51 +2,142 @@
 
 > **The Goddess of AI Wisdom**
 
-Athena AI is a modular artificial intelligence platform designed to help people think clearly, learn deeply, and make wiser decisions through honest, insightful conversations.
+Athena AI is a modular AI assistant platform designed to help people think clearly, learn deeply, and make wiser decisions through honest, insightful conversations.
 
-Rather than simply generating answers, Athena aims to encourage understanding, critical thinking, and informed decision-making. Wisdom, transparency, and long-term learning are at the core of every interaction.
+Rather than embedding AI into individual applications, Athena centralizes intelligence so every interface shares the same capabilities, memory, and services.
 
-## Mission
-
-To build an AI platform that combines intelligence with wisdom, honesty, and strategic thinking while remaining modular, extensible, and accessible to everyone.
-
-## Current Status
-
-**Version:** v0.1.0 _(Planning & Architecture Phase)_
-
-### Current Technology Stack
-
-- **Language:** TypeScript
-- **Runtime:** Node.js
-- **Package Manager:** pnpm
-- **Discord Library:** discord.js
-- **ORM:** Prisma
-- **Development Database:** SQLite
-- **Production Database:** PostgreSQL
-- **Primary AI Provider:** Google Gemini
-- **Future AI Providers:** Ollama, OpenAI, Claude
-
-## Vision
-
-Athena begins as a Discord AI assistant and will evolve into a complete AI platform capable of serving multiple clients, including web applications, mobile apps, APIs, and future voice interfaces.
-
-The long-term goal is to build a platform that supports:
-
-- Long-term memory
-- Intelligent tools
-- Knowledge retrieval (RAG)
-- AI agents
-- Multiple AI providers
-- Modular extensions
-
-## Project Philosophy
-
-Athena is designed around one core principle:
-
-> **Athena is the platform. Discord is only the first interface.**
-
-Every architectural decision is made with long-term scalability, maintainability, and flexibility in mind.
+> **One assistant. Multiple interfaces.**
 
 ---
 
-_"Every response should leave the user wiser than before."_
+## ✨ Vision
+
+Athena AI is not a Discord bot.
+
+Discord is simply the first interface.
+
+The long-term vision is to build a personal AI assistant that can be accessed from anywhere, including:
+
+- 🤖 Discord Bot
+- 🌐 Web Application
+- 📱 Mobile Application
+- 💼 Portfolio AI Widget
+- 🖥️ Desktop Application
+- 🔌 REST API
+- 🎙️ Voice Interfaces
+
+Every interface communicates with the same Athena instance, ensuring a consistent experience across every platform.
+
+---
+
+## 🧠 Core Philosophy
+
+Athena is inspired by the Greek Goddess of Wisdom.
+
+She is designed not only to answer questions, but to cultivate understanding.
+
+Athena values:
+
+- Wisdom
+- Truth
+- Honesty
+- Respect
+- Curiosity
+- Integrity
+
+> **Every response should leave the user wiser than before.**
+
+---
+
+## 🏗️ Architecture
+
+```text
+                      ATHENA AI
+              (Your Personal AI Assistant)
+
+        ┌──────────────┬──────────────┬──────────────┐
+        │              │              │              │
+        ▼              ▼              ▼              ▼
+   Discord Bot     Web App     Mobile App     Portfolio Widget
+        │              │              │              │
+        └──────────────┴──────────────┴──────────────┘
+                       │
+                       ▼
+                    Athena
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+        ▼              ▼              ▼
+   AI Providers     Memory        Services
+        │              │              │
+        ▼              ▼              ▼
+     Gemini      User Memory   Search, PDF,
+                               Images, Weather
+```
+
+---
+
+## 🚀 Current Features
+
+- ✅ TypeScript project foundation
+- ✅ Discord Bot integration
+- ✅ Slash command framework
+- ✅ `/ping`
+- ✅ `/help`
+- ✅ `/about`
+- 🚧 AI integration (In Progress)
+
+---
+
+## 🛠️ Technology Stack
+
+- TypeScript
+- Node.js
+- pnpm
+- discord.js
+- Prisma
+- SQLite (Development)
+- PostgreSQL (Production)
+- Google Gemini
+
+---
+
+## 📂 Documentation
+
+Project documentation is available inside the `docs/` directory.
+
+- Architecture
+- Architecture Decision Records (ADRs)
+- Roadmap
+- Technology Stack
+- Manifesto
+- Contributing Guide
+
+---
+
+## 🗺️ Roadmap
+
+- ✅ Foundation
+- 🚧 AI Integration
+- ⏳ Memory
+- ⏳ Intelligent Services
+- ⏳ Multi-platform Interfaces
+- ⏳ Production Release
+
+---
+
+## 🤝 Contributing
+
+Athena AI is currently an active personal project.
+
+Suggestions, ideas, and constructive feedback are always welcome.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+> **"The Goddess of AI Wisdom."**

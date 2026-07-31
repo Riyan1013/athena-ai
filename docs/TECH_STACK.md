@@ -1,39 +1,85 @@
-# Athena Tech Stack
+# Athena AI Tech Stack
 
-## Language
+This document lists the technologies used to build Athena AI.
 
-TypeScript
+Some technologies are already implemented, while others are planned as the platform evolves.
 
-## Runtime
+---
 
-Node.js
+## Core Technologies
 
-## Package Manager
+### Language
 
-pnpm
+- TypeScript
 
-## Discord Library
+### Runtime
 
-discord.js
+- Node.js
 
-## ORM
+### Package Manager
 
-Prisma
+- pnpm
 
-## Development Database
+---
 
-SQLite
+## Development Tools
 
-## Production Database
+### Validation
 
-PostgreSQL
+- Zod
 
-## AI Provider
+### Development Runner
 
-Google Gemini
+- tsx
 
-## Future Providers
+---
 
-- Ollama
+## Discord Interface
+
+### Library
+
+- discord.js
+
+---
+
+## Database
+
+### ORM
+
+- Prisma
+
+### Development Database
+
+- SQLite
+
+### Production Database
+
+- PostgreSQL
+
+---
+
+## Artificial Intelligence
+
+### Current Provider
+
+- Google Gemini
+
+### Planned Providers
+
 - OpenAI
-- Claude
+- Anthropic Claude
+- Ollama
+
+---
+
+## Future Technologies
+
+As Athena AI evolves, additional technologies may be introduced to support new capabilities, including:
+
+- Authentication
+- Vector Databases
+- Embedding Models
+- Speech Recognition
+- Text-to-Speech
+- Containerization (Docker)
+- Cloud Deployment

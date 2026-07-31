@@ -1,80 +1,55 @@
-## Phase 0 — Planning
+# Athena AI Roadmap
 
-- [x] Project Vision
-- [x] Create Documentation
-- [x] Choose Programming Language
-- [x] Choose Package Manager
-- [x] Choose Discord Library
-- [x] Choose ORM
-- [x] Choose Development Database
-- [x] Choose AI Provider
-- [x] Design Project Architecture
+## Phase 1 — Foundation ✅
 
-## Phase 1 — Discord Foundation
-
-- [ ] Create Discord Bot
-- [ ] Design AI Provider Interface
-- [ ] Integrate Google Gemini
-- [ ] Chat with Athena
-- [ ] Conversation History
-- [ ] Slash Commands
+- [x] Project setup
+- [x] TypeScript
+- [x] Discord integration
+- [x] Slash command framework
+- [x] /ping
+- [x] /help
+- [x] /about
 
 ---
 
-## Phase 2 — Local AI
+## Phase 2 — Athena Intelligence 🚧
 
-- [ ] Integrate Ollama
-- [ ] Download & Test Local Models
-- [ ] Switch Between Gemini and Ollama
-
----
-
-## Phase 3 — Premium AI Providers
-
-- [ ] Integrate OpenAI
-- [ ] Integrate Claude
-- [ ] Provider Selection
+- [ ] AI Provider abstraction
+- [ ] Gemini integration
+- [ ] /ask command
+- [ ] Conversation management
 
 ---
 
-## Phase 4 — Memory
+## Phase 3 — Memory
 
-- [ ] User Memory
-- [ ] Preferences
-- [ ] Context Memory
-- [ ] Conversation Storage
+- [ ] Long-term memory
+- [ ] User profiles
+- [ ] Conversation summaries
 
 ---
 
-## Phase 5 — Tools
+## Phase 4 — Services
 
-- [ ] Web Search
+- [ ] Web search
+- [ ] PDF analysis
 - [ ] Calculator
-- [ ] Weather
-- [ ] PDF Reader
-- [ ] File Analysis
+- [ ] Image generation
 
 ---
 
-## Phase 6 — Knowledge
+## Phase 5 — Interfaces
 
-- [ ] RAG
-- [ ] Document Search
-- [ ] Custom Knowledge Base
-
----
-
-## Phase 7 — Agents
-
-- [ ] Multi-step Reasoning
-- [ ] Task Planning
-- [ ] Tool Selection
+- [ ] Portfolio widget
+- [ ] Web application
+- [ ] Mobile application
+- [ ] Desktop application
 
 ---
 
-## Phase 8 — Athena Platform
+## Phase 6 — Production
 
-- [ ] Web Application
-- [ ] Mobile App
+- [ ] Authentication
+- [ ] Dashboard
 - [ ] API
-- [ ] Voice Assistant
+- [ ] Deploy Athena AI

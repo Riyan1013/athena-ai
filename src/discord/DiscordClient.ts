@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js'
 import { env } from '../config/env.js'
 import { CommandHandler } from './CommandHandler.js'
+import type { Athena } from '../core/Athena.js'
 
 // Wraps discord.js and owns all Discord-specific concerns: login, lifecycle,
 // and event wiring. Command execution itself lives in CommandHandler.
@@ -8,13 +9,15 @@ export class DiscordClient {
   private readonly client: Client
   private readonly commandHandler: CommandHandler
 
-  constructor() {
+  constructor(athena: Athena) {
     // Minimal intents for now — expand once message handling is added.
     this.client = new Client({
       intents: [GatewayIntentBits.Guilds],
     })
 
-    this.commandHandler = new CommandHandler()
+    // Commands need a way to call back into Athena (e.g. AskCommand), so the
+    // reference is passed down rather than commands reaching into Discord internals.
+    this.commandHandler = new CommandHandler(athena)
     this.registerEvents()
   }
 

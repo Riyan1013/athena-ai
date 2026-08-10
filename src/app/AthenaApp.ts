@@ -1,4 +1,5 @@
 import { GeminiProvider } from '../ai/providers/GeminiProvider.js'
+import { ConversationManager } from '../conversation/ConversationManager.js'
 import { Athena } from '../core/Athena.js'
 import { DiscordClient } from '../discord/DiscordClient.js'
 
@@ -10,17 +11,18 @@ export class AthenaApp {
 
   constructor() {
     const provider = new GeminiProvider()
+    const conversationManager = new ConversationManager()
 
-    this.athena = new Athena(provider)
+    this.athena = new Athena(provider, conversationManager)
 
-    this.discord = new DiscordClient()
+    this.discord = new DiscordClient(this.athena)
   }
 
   async start(): Promise<void> {
     await this.discord.start()
   }
 
-  async stop(): Promise<void> {
-    await this.discord.stop()
+  stop(): void {
+    this.discord.stop()
   }
 }

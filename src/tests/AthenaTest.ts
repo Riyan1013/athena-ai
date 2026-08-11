@@ -7,6 +7,7 @@ async function main() {
   const conversationManager = new ConversationManager()
 
   const athena = new Athena(provider, conversationManager)
+  const athenaUserId = 'test-athena-user'
 
   // ─────────────────────────────────────────
   // Conversation A
@@ -18,13 +19,21 @@ async function main() {
 
   console.log('\n--- A1 ---')
 
-  const replyA1 = await athena.ask(conversationA, 'My favorite color is blue.')
+  const replyA1 = await athena.ask(
+    conversationA,
+    athenaUserId,
+    'My favorite color is blue.',
+  )
 
   console.log('Athena:', replyA1)
 
   console.log('\n--- A2 ---')
 
-  const replyA2 = await athena.ask(conversationA, 'What is my favorite color?')
+  const replyA2 = await athena.ask(
+    conversationA,
+    athenaUserId,
+    'What is my favorite color?',
+  )
 
   console.log('Athena:', replyA2)
 
@@ -38,7 +47,11 @@ async function main() {
 
   console.log('\n--- B1 ---')
 
-  const replyB1 = await athena.ask(conversationB, 'What is my favorite color?')
+  const replyB1 = await athena.ask(
+    conversationB,
+    athenaUserId,
+    'What is my favorite color?',
+  )
 
   console.log('Athena:', replyB1)
 
@@ -52,6 +65,7 @@ async function main() {
 
   const replyA3 = await athena.ask(
     conversationA,
+    athenaUserId,
     'Do you remember what my favorite color is?',
   )
 

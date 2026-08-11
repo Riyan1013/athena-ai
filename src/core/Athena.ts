@@ -3,6 +3,7 @@ import { determineResponseMode } from '../ai/response/ResponseStrategy.js'
 import type { AIProvider } from '../ai/providers/AIProvider.js'
 import type { Conversation } from '../conversation/Conversation.js'
 import { ConversationManager } from '../conversation/ConversationManager.js'
+import type { AthenaUserId } from '../memory/Memory.js'
 
 const RESPONSE_TOKEN_LIMITS = {
   short: 220,
@@ -26,8 +27,17 @@ export class Athena {
   /**
    * Sends a user message within a conversation and returns
    * Athena's response.
+   *
+   * `athenaUserId` identifies who the message is from at the Athena
+   * platform level (see src/memory/Memory.ts). It is accepted here to
+   * establish Athena's user-identity input boundary; it is not yet used
+   * for memory retrieval or prompt construction.
    */
-  async ask(conversationId: string, message: string): Promise<string> {
+  async ask(
+    conversationId: string,
+    athenaUserId: AthenaUserId,
+    message: string,
+  ): Promise<string> {
     const conversation = this.conversationManager.getOrCreate(conversationId)
 
     // The pending user message is included when building the prompt, but

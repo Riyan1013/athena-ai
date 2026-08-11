@@ -39,7 +39,9 @@ export class AskCommand implements Command {
 
     const conversationId = `${guildId}:${channelId}:${userId}`
 
-    const answer = await this.athena.ask(conversationId, question)
+    const athenaUserId = userId
+
+    const answer = await this.athena.ask(conversationId, athenaUserId, question)
 
     const [first, ...rest] = splitMessage(answer)
 

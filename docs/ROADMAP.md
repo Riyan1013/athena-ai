@@ -21,7 +21,7 @@
 - [x] Token / usage / latency tracking
 - [x] Conversation management
 - [x] Conversation isolation
-- [ ] Error / provider handling
+- [x] Error / provider handling
 
 ## Phase 3 — Memory ⏳
 
@@ -75,7 +75,7 @@
 
 ✅ Milestone 1 — Athena Foundation
 
-🚧 Milestone 2 — Athena Intelligence & Conversation
+✅ Milestone 2 — Athena Intelligence & Conversation
 
 ⬜ Milestone 3 — Memory System
 

@@ -8,28 +8,54 @@ async function main() {
 
   const athena = new Athena(provider, conversationManager)
 
-  const conversationId = 'test-conversation'
+  // ─────────────────────────────────────────
+  // Conversation A
+  // ─────────────────────────────────────────
 
-  console.log('\n--- Turn 1 ---')
+  const conversationA = 'test-conversation-A'
 
-  const reply1 = await athena.ask(conversationId, 'My name is Riyan.')
+  console.log('\n========== CONVERSATION A ==========')
 
-  console.log('Athena:', reply1)
+  console.log('\n--- A1 ---')
 
-  console.log('\n--- Turn 2 ---')
+  const replyA1 = await athena.ask(conversationA, 'My favorite color is blue.')
 
-  const reply2 = await athena.ask(conversationId, 'What is my name?')
+  console.log('Athena:', replyA1)
 
-  console.log('Athena:', reply2)
+  console.log('\n--- A2 ---')
 
-  console.log('\n--- Turn 3 ---')
+  const replyA2 = await athena.ask(conversationA, 'What is my favorite color?')
 
-  const reply3 = await athena.ask(
-    conversationId,
-    'What did I tell you about myself?',
+  console.log('Athena:', replyA2)
+
+  // ─────────────────────────────────────────
+  // Conversation B
+  // ─────────────────────────────────────────
+
+  const conversationB = 'test-conversation-B'
+
+  console.log('\n========== CONVERSATION B ==========')
+
+  console.log('\n--- B1 ---')
+
+  const replyB1 = await athena.ask(conversationB, 'What is my favorite color?')
+
+  console.log('Athena:', replyB1)
+
+  // ─────────────────────────────────────────
+  // Return to Conversation A
+  // ─────────────────────────────────────────
+
+  console.log('\n========== BACK TO CONVERSATION A ==========')
+
+  console.log('\n--- A3 ---')
+
+  const replyA3 = await athena.ask(
+    conversationA,
+    'Do you remember what my favorite color is?',
   )
 
-  console.log('Athena:', reply3)
+  console.log('Athena:', replyA3)
 }
 
 main().catch(console.error)

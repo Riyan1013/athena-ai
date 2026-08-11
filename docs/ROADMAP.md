@@ -19,8 +19,8 @@
 - [x] System Prompt
 - [x] Response Strategy
 - [x] Token / usage / latency tracking
-- [ ] Conversation management
-- [ ] Conversation isolation
+- [x] Conversation management
+- [x] Conversation isolation
 - [ ] Error / provider handling
 
 ## Phase 3 — Memory ⏳

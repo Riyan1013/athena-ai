@@ -30,9 +30,10 @@ export class Athena {
   async ask(conversationId: string, message: string): Promise<string> {
     const conversation = this.conversationManager.getOrCreate(conversationId)
 
-    conversation.addMessage('user', message)
-
-    const prompt = this.buildPrompt(conversation)
+    // The pending user message is included when building the prompt, but
+    // is only committed to the conversation after the provider succeeds —
+    // a failed request must not leave a half-completed turn behind.
+    const prompt = this.buildPrompt(conversation, message)
 
     const responseMode = determineResponseMode(message)
     const maxOutputTokens = RESPONSE_TOKEN_LIMITS[responseMode]
@@ -42,18 +43,27 @@ export class Athena {
       maxOutputTokens,
     )
 
+    conversation.addMessage('user', message)
     conversation.addMessage('assistant', response)
 
     return response
   }
 
   /**
-   * Builds the prompt sent to the AI provider using
-   * Athena's system prompt and the current conversation history.
+   * Builds the prompt sent to the AI provider using Athena's system prompt,
+   * the conversation history so far, and the current (not yet stored)
+   * user message.
    */
-  private buildPrompt(conversation: Conversation): string {
-    const history = conversation
-      .getMessages()
+  private buildPrompt(
+    conversation: Conversation,
+    currentMessage: string,
+  ): string {
+    const messages = [
+      ...conversation.getMessages(),
+      { role: 'user' as const, content: currentMessage },
+    ]
+
+    const history = messages
       .map((message) => {
         const role = message.role === 'user' ? 'User' : 'Athena'
 

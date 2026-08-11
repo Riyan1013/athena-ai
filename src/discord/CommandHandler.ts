@@ -3,6 +3,7 @@ import { env } from '../config/env.js'
 import type { Command } from './commands/Command.js'
 import { createCommands } from './commands/index.js'
 import type { Athena } from '../core/Athena.js'
+import { AIProviderError } from '../ai/providers/AIProviderError.js'
 
 // Owns registration of slash commands with Discord and routing of
 // InteractionCreate events to the matching Command implementation.
@@ -45,7 +46,7 @@ export class CommandHandler {
       )
 
       const errorResponse = {
-        content: 'There was an error executing this command.',
+        content: this.buildErrorMessage(error),
         ephemeral: true,
       }
 
@@ -54,6 +55,32 @@ export class CommandHandler {
       } else {
         await interaction.reply(errorResponse)
       }
+    }
+  }
+
+  // Produces a provider-independent, user-facing message for a command
+  // failure. AIProviderError gets a message tailored to its code; anything
+  // else falls back to the generic message.
+  private buildErrorMessage(error: unknown): string {
+    if (!(error instanceof AIProviderError)) {
+      return 'There was an error executing this command.'
+    }
+
+    switch (error.code) {
+      case 'RATE_LIMITED':
+        return error.retryAfterSeconds
+          ? `🦉 Athena is temporarily rate-limited. Please try again in about ${error.retryAfterSeconds} seconds.`
+          : '🦉 Athena is temporarily rate-limited. Please try again shortly.'
+      case 'MODEL_UNAVAILABLE':
+        return "🦉 Athena's current AI model is temporarily unavailable."
+      case 'AUTHENTICATION':
+        return '🦉 Athena is having trouble authenticating with the AI provider.'
+      case 'NETWORK':
+        return '🦉 Athena could not reach the AI provider. Please try again shortly.'
+      case 'INVALID_REQUEST':
+        return '🦉 Athena could not process that request.'
+      default:
+        return '🦉 Athena encountered an unexpected AI provider error.'
     }
   }
 }

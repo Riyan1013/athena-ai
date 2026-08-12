@@ -1,14 +1,19 @@
 import { GeminiProvider } from '../ai/providers/GeminiProvider.js'
 import { ConversationManager } from '../conversation/ConversationManager.js'
 import { Athena } from '../core/Athena.js'
+import { InMemoryMemoryRepository } from '../memory/InMemoryMemoryRepository.js'
+import { MemoryManager } from '../memory/MemoryManager.js'
 
 async function main() {
   const provider = new GeminiProvider()
   const conversationManager = new ConversationManager()
 
-  const athena = new Athena(provider, conversationManager)
-  const athenaUserId = 'test-athena-user'
+  const memoryRepository = new InMemoryMemoryRepository()
+  const memoryManager = new MemoryManager(memoryRepository)
 
+  const athena = new Athena(provider, conversationManager, memoryManager)
+
+  const athenaUserId = 'test-athena-user'
   // ─────────────────────────────────────────
   // Conversation A
   // ─────────────────────────────────────────

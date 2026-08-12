@@ -25,11 +25,11 @@
 
 ## Phase 3 — Memory ⏳
 
-- [ ] Long-term memory
-- [ ] User profiles
+- [x] Long-term memory
+- [x] User profiles
 - [ ] Conversation summaries
-- [ ] Memory retrieval
-- [ ] Memory management
+- [x] Memory retrieval
+- [x] Memory management
 
 ## Phase 4 — Tools & Services ⏳
 
@@ -94,3 +94,42 @@
 ⬜ Milestone 10 — Intelligent Model Routing
 
 ⬜ Milestone 11 — Production Deployment
+
+## Current Implementation Status
+
+The deterministic Phase 3 memory foundation is implemented.
+
+### Implemented
+
+- Memory data model
+- MemoryRepository abstraction
+- InMemoryMemoryRepository
+- MemoryManager lifecycle operations
+- User profile lifecycle
+- Explicit memory lifecycle
+- Deterministic memory retrieval
+- Memory context injection into Athena
+- Explicit long-term memory API
+- User ownership enforcement
+- Discord `/remember`
+- Discord `/memories`
+- Discord `/forget`
+
+### Not Yet Implemented
+
+- Persistent memory storage
+- Conversation summaries
+- Automatic memory inference
+- Semantic memory retrieval
+- Embeddings / vector search
+- Relevance-based memory ranking
+
+### Storage Limitation
+
+The current implementation uses `InMemoryMemoryRepository`.
+
+Memories therefore exist only for the lifetime of the running Athena
+process and are lost when the application restarts.
+
+Persistent storage will be introduced in a later phase without changing
+the MemoryManager business-facing API.

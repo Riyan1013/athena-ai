@@ -1,4 +1,10 @@
-import type { AthenaUserId, Memory } from './Memory.js'
+import type {
+  AthenaUserId,
+  ExplicitMemory,
+  Memory,
+  MemoryType,
+  UserProfileMemory,
+} from './Memory.js'
 import type { MemoryRepository } from './MemoryRepository.js'
 
 /**
@@ -55,6 +61,30 @@ export type CreateMemoryInput =
 export interface UpdateMemoryInput {
   readonly id: string
   readonly content: string
+}
+
+/**
+ * Deterministic retrieval options for getMemories().
+ *
+ * This is a plain filter/sort/limit over an owner's stored memories —
+ * no relevance scoring, ranking, or semantic matching. That is a later,
+ * separate capability.
+ */
+export interface RetrieveMemoriesOptions {
+  /** Restrict results to a single memory category. Omit for all types. */
+  readonly type?: MemoryType
+
+  /**
+   * Sort direction by `createdAt`. Defaults to 'asc' (oldest first).
+   * 'desc' returns newest first.
+   */
+  readonly order?: 'asc' | 'desc'
+
+  /**
+   * Maximum number of memories to return, applied after filtering and
+   * sorting.
+   */
+  readonly limit?: number
 }
 
 /**
@@ -174,5 +204,150 @@ export class MemoryManager {
    */
   async delete(id: string): Promise<boolean> {
     return this.repository.delete(id)
+  }
+
+  // ---------------------------------------------------------------------
+  // Retrieval
+  //
+  // Deterministic filter/sort/limit over an owner's stored memories,
+  // built on top of the existing repository.getByOwner(). No relevance
+  // scoring, ranking, or semantic matching — that is a later, separate
+  // capability. getUserProfile() and getExplicitMemories() remain the
+  // more ergonomic entry points for those specific categories; this is
+  // the general-purpose method for mixed types, ordering, and limiting.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Retrieves an owner's memories, optionally filtered by type, sorted
+   * by `createdAt`, and capped by a limit.
+   *
+   * @returns A new array — never the repository's or manager's internal
+   * state — so callers can freely mutate the result without affecting
+   * subsequent retrievals.
+   */
+  async getMemories(
+    ownerId: AthenaUserId,
+    options: RetrieveMemoriesOptions = {},
+  ): Promise<Memory[]> {
+    const memories = await this.repository.getByOwner(ownerId)
+
+    const filtered = options.type
+      ? memories.filter((memory) => memory.type === options.type)
+      : [...memories]
+
+    const direction = options.order === 'desc' ? -1 : 1
+    filtered.sort((a, b) => (a.createdAt - b.createdAt) * direction)
+
+    if (typeof options.limit === 'number') {
+      return filtered.slice(0, options.limit)
+    }
+
+    return filtered
+  }
+
+  // ---------------------------------------------------------------------
+  // User Profile
+  //
+  // A user has at most one USER_PROFILE memory (docs/MEMORY.md §3.1).
+  // These methods enforce that invariant on top of the generic
+  // create/getByOwner/update/delete operations above — they add no new
+  // storage capability, only the "one profile per owner" business rule.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Retrieves the given owner's User Profile memory, if one exists.
+   */
+  async getUserProfile(
+    ownerId: AthenaUserId,
+  ): Promise<UserProfileMemory | undefined> {
+    const memories = await this.repository.getByOwner(ownerId)
+
+    return memories.find(
+      (memory): memory is UserProfileMemory => memory.type === 'USER_PROFILE',
+    )
+  }
+
+  /**
+   * Creates or replaces the given owner's User Profile content.
+   *
+   * If no profile exists yet, one is created. If one exists, its content
+   * is replaced and `updatedAt` is refreshed — `id` and `createdAt` are
+   * preserved. This replaces the entire content rather than merging it;
+   * callers are responsible for supplying the full profile text they
+   * want stored.
+   */
+  async upsertUserProfile(
+    ownerId: AthenaUserId,
+    content: string,
+  ): Promise<UserProfileMemory> {
+    const existing = await this.getUserProfile(ownerId)
+
+    if (existing) {
+      const updated = await this.repository.update({
+        ...existing,
+        content,
+        updatedAt: Date.now(),
+      })
+
+      if (updated.type !== 'USER_PROFILE') {
+        throw new Error(
+          'Expected updating a USER_PROFILE memory to preserve its type.',
+        )
+      }
+
+      return updated
+    }
+
+    const created = await this.create({
+      ownerId,
+      type: 'USER_PROFILE',
+      content,
+    })
+
+    if (created.type !== 'USER_PROFILE') {
+      throw new Error('Expected create() to produce a USER_PROFILE memory.')
+    }
+
+    return created
+  }
+
+  /**
+   * Deletes the given owner's User Profile, if one exists.
+   *
+   * @returns true if a profile was deleted, false if the owner had none.
+   */
+  async deleteUserProfile(ownerId: AthenaUserId): Promise<boolean> {
+    const existing = await this.getUserProfile(ownerId)
+
+    if (!existing) {
+      return false
+    }
+
+    return this.repository.delete(existing.id)
+  }
+
+  // ---------------------------------------------------------------------
+  // Explicit Memory
+  //
+  // Unlike USER_PROFILE, EXPLICIT memories are not a singleton — a user
+  // may have any number of independent explicit memories. The generic
+  // create(), update(), and delete() methods above are already sufficient
+  // for creating, editing, and removing individual explicit memories; the
+  // only gap is retrieval scoped to just this category, which is what
+  // this method adds.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Retrieves all EXPLICIT memories belonging to a given owner.
+   *
+   * @returns The owner's explicit memories, or an empty array if they
+   * have none. Order is not guaranteed.
+   */
+  async getExplicitMemories(ownerId: AthenaUserId): Promise<ExplicitMemory[]> {
+    const memories = await this.repository.getByOwner(ownerId)
+
+    return memories.filter(
+      (memory): memory is ExplicitMemory => memory.type === 'EXPLICIT',
+    )
   }
 }

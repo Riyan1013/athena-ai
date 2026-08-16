@@ -1021,6 +1021,261 @@ test('getMemories() returns a fresh array each call, safe to mutate', async () =
 })
 
 // ---------------------------------------------------------------------
+// 37. getConversationSummary() — create summary
+// ---------------------------------------------------------------------
+
+test('upsertConversationSummary() creates a summary when none exists', async () => {
+  const manager = makeManager()
+
+  const created = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'The user discussed their favorite color and hobbies.',
+  )
+
+  assert.equal(created.type, 'CONVERSATION_SUMMARY')
+  assert.equal(created.ownerId, 'owner-1')
+  assert.equal(created.conversationId, 'conv-1')
+  assert.equal(
+    created.content,
+    'The user discussed their favorite color and hobbies.',
+  )
+  assertValidTimestamp(created.createdAt, 'createdAt')
+  assertValidTimestamp(created.updatedAt, 'updatedAt')
+})
+
+// ---------------------------------------------------------------------
+// 38. getConversationSummary() — nonexistent summary
+// ---------------------------------------------------------------------
+
+test('getConversationSummary() returns undefined when none exists', async () => {
+  const manager = makeManager()
+
+  const result = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.equal(result, undefined)
+})
+
+// ---------------------------------------------------------------------
+// 39. getConversationSummary() — existing summary
+// ---------------------------------------------------------------------
+
+test('getConversationSummary() returns the existing summary', async () => {
+  const manager = makeManager()
+
+  const created = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Initial summary content.',
+  )
+
+  const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.deepEqual(fetched, created)
+})
+
+// ---------------------------------------------------------------------
+// 40. upsertConversationSummary() — update the same summary
+// ---------------------------------------------------------------------
+
+test('upsertConversationSummary() replaces content on an existing summary', async () => {
+  const manager = makeManager()
+
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Original summary.',
+  )
+
+  const updated = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Updated summary.',
+  )
+
+  assert.equal(updated.content, 'Updated summary.')
+
+  const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.equal(fetched?.content, 'Updated summary.')
+})
+
+// ---------------------------------------------------------------------
+// 41. upsertConversationSummary() — preserves id/createdAt/conversationId
+// ---------------------------------------------------------------------
+
+test('upsertConversationSummary() preserves id, createdAt, and conversationId on update', async () => {
+  const manager = makeManager()
+
+  const original = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Original summary.',
+  )
+
+  const updated = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Updated summary.',
+  )
+
+  assert.equal(updated.id, original.id)
+  assert.equal(updated.createdAt, original.createdAt)
+  assert.equal(updated.conversationId, original.conversationId)
+  assert.equal(updated.ownerId, original.ownerId)
+})
+
+// ---------------------------------------------------------------------
+// 42. Different conversations remain independent
+// ---------------------------------------------------------------------
+
+test('summaries for different conversations of the same owner remain independent', async () => {
+  const manager = makeManager()
+
+  const summaryA = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-a',
+    'Summary of conversation A.',
+  )
+  const summaryB = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-b',
+    'Summary of conversation B.',
+  )
+
+  assert.notEqual(summaryA.id, summaryB.id)
+
+  const fetchedA = await manager.getConversationSummary('owner-1', 'conv-a')
+  const fetchedB = await manager.getConversationSummary('owner-1', 'conv-b')
+
+  assert.equal(fetchedA?.content, 'Summary of conversation A.')
+  assert.equal(fetchedB?.content, 'Summary of conversation B.')
+})
+
+// ---------------------------------------------------------------------
+// 43. Different owners remain isolated
+// ---------------------------------------------------------------------
+
+test('summaries for the same conversationId across different owners remain isolated', async () => {
+  const manager = makeManager()
+
+  const summaryOwnerA = await manager.upsertConversationSummary(
+    'owner-a',
+    'conv-shared-id',
+    "Owner A's summary.",
+  )
+  const summaryOwnerB = await manager.upsertConversationSummary(
+    'owner-b',
+    'conv-shared-id',
+    "Owner B's summary.",
+  )
+
+  assert.notEqual(summaryOwnerA.id, summaryOwnerB.id)
+
+  const fetchedForA = await manager.getConversationSummary(
+    'owner-a',
+    'conv-shared-id',
+  )
+  const fetchedForB = await manager.getConversationSummary(
+    'owner-b',
+    'conv-shared-id',
+  )
+
+  assert.equal(fetchedForA?.content, "Owner A's summary.")
+  assert.equal(fetchedForB?.content, "Owner B's summary.")
+})
+
+// ---------------------------------------------------------------------
+// 44. deleteConversationSummary() — delete existing summary
+// ---------------------------------------------------------------------
+
+test('deleteConversationSummary() deletes an existing summary and returns true', async () => {
+  const manager = makeManager()
+
+  await manager.upsertConversationSummary('owner-1', 'conv-1', 'To be deleted.')
+
+  const result = await manager.deleteConversationSummary('owner-1', 'conv-1')
+  assert.equal(result, true)
+
+  const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.equal(fetched, undefined)
+})
+
+// ---------------------------------------------------------------------
+// 45. deleteConversationSummary() — nonexistent summary returns false
+// ---------------------------------------------------------------------
+
+test('deleteConversationSummary() returns false when no summary exists', async () => {
+  const manager = makeManager()
+
+  const result = await manager.deleteConversationSummary('owner-1', 'conv-1')
+  assert.equal(result, false)
+})
+
+// ---------------------------------------------------------------------
+// 46. getMemories({ type: 'CONVERSATION_SUMMARY' }) works generically
+// ---------------------------------------------------------------------
+
+test('getMemories({ type: "CONVERSATION_SUMMARY" }) returns all of an owner\'s summaries', async () => {
+  const manager = makeManager()
+
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-a',
+    'Summary of conversation A.',
+  )
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-b',
+    'Summary of conversation B.',
+  )
+  await manager.create({
+    ownerId: 'owner-1',
+    type: 'EXPLICIT',
+    content: 'An explicit memory, not a summary.',
+  })
+
+  const results = await manager.getMemories('owner-1', {
+    type: 'CONVERSATION_SUMMARY',
+  })
+
+  assert.equal(results.length, 2)
+  assert.ok(results.every((m) => m.type === 'CONVERSATION_SUMMARY'))
+  const conversationIds = results
+    .map((m) => ('conversationId' in m ? m.conversationId : undefined))
+    .sort()
+  assert.deepEqual(conversationIds, ['conv-a', 'conv-b'])
+})
+
+// ---------------------------------------------------------------------
+// 47. Updating one conversation's summary does not affect another
+// ---------------------------------------------------------------------
+
+test("updating one conversation's summary does not affect another conversation's summary", async () => {
+  const manager = makeManager()
+
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-a',
+    'Original summary of conversation A.',
+  )
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-b',
+    'Original summary of conversation B.',
+  )
+
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-a',
+    'Updated summary of conversation A.',
+  )
+
+  const fetchedA = await manager.getConversationSummary('owner-1', 'conv-a')
+  const fetchedB = await manager.getConversationSummary('owner-1', 'conv-b')
+
+  assert.equal(fetchedA?.content, 'Updated summary of conversation A.')
+  assert.equal(fetchedB?.content, 'Original summary of conversation B.')
+})
+
+// ---------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------
 

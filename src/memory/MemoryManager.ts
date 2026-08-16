@@ -1,5 +1,6 @@
 import type {
   AthenaUserId,
+  ConversationSummaryMemory,
   ExplicitMemory,
   Memory,
   MemoryType,
@@ -349,5 +350,102 @@ export class MemoryManager {
     return memories.filter(
       (memory): memory is ExplicitMemory => memory.type === 'EXPLICIT',
     )
+  }
+
+  // ---------------------------------------------------------------------
+  // Conversation Summary
+  //
+  // Exactly one CONVERSATION_SUMMARY memory exists per (ownerId,
+  // conversationId) pair — a singleton scoped to a conversation rather
+  // than to an owner alone, mirroring the USER_PROFILE singleton pattern
+  // above. MemoryManager only stores whatever summary content it is
+  // given; it never generates, merges, or reinterprets summary text —
+  // that responsibility belongs to a later orchestration layer.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Retrieves the summary for a specific owner's conversation, if one
+   * exists.
+   */
+  async getConversationSummary(
+    ownerId: AthenaUserId,
+    conversationId: string,
+  ): Promise<ConversationSummaryMemory | undefined> {
+    const memories = await this.repository.getByOwner(ownerId)
+
+    return memories.find(
+      (memory): memory is ConversationSummaryMemory =>
+        memory.type === 'CONVERSATION_SUMMARY' &&
+        memory.conversationId === conversationId,
+    )
+  }
+
+  /**
+   * Creates or replaces the summary for a specific owner's conversation.
+   *
+   * If no summary exists yet for this (ownerId, conversationId) pair,
+   * one is created. If one exists, its content is replaced wholesale and
+   * `updatedAt` is refreshed — `id`, `createdAt`, `ownerId`, and
+   * `conversationId` are preserved. This replaces the entire content
+   * rather than merging it; callers are responsible for supplying the
+   * full summary text they want stored.
+   */
+  async upsertConversationSummary(
+    ownerId: AthenaUserId,
+    conversationId: string,
+    content: string,
+  ): Promise<ConversationSummaryMemory> {
+    const existing = await this.getConversationSummary(ownerId, conversationId)
+
+    if (existing) {
+      const updated = await this.repository.update({
+        ...existing,
+        content,
+        updatedAt: Date.now(),
+      })
+
+      if (updated.type !== 'CONVERSATION_SUMMARY') {
+        throw new Error(
+          'Expected updating a CONVERSATION_SUMMARY memory to preserve its type.',
+        )
+      }
+
+      return updated
+    }
+
+    const created = await this.create({
+      ownerId,
+      type: 'CONVERSATION_SUMMARY',
+      content,
+      conversationId,
+    })
+
+    if (created.type !== 'CONVERSATION_SUMMARY') {
+      throw new Error(
+        'Expected create() to produce a CONVERSATION_SUMMARY memory.',
+      )
+    }
+
+    return created
+  }
+
+  /**
+   * Deletes the summary for a specific owner's conversation, if one
+   * exists.
+   *
+   * @returns true if a summary was deleted, false if none existed for
+   * that (ownerId, conversationId) pair.
+   */
+  async deleteConversationSummary(
+    ownerId: AthenaUserId,
+    conversationId: string,
+  ): Promise<boolean> {
+    const existing = await this.getConversationSummary(ownerId, conversationId)
+
+    if (!existing) {
+      return false
+    }
+
+    return this.repository.delete(existing.id)
   }
 }

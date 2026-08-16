@@ -1,9 +1,14 @@
+import { buildSummaryPrompt } from '../ai/prompts/SummaryPrompt.js'
 import { buildSystemPrompt } from '../ai/prompts/SystemPrompt.js'
 import { determineResponseMode } from '../ai/response/ResponseStrategy.js'
 import type { AIProvider } from '../ai/providers/AIProvider.js'
 import type { Conversation } from '../conversation/Conversation.js'
 import { ConversationManager } from '../conversation/ConversationManager.js'
-import type { AthenaUserId, Memory } from '../memory/Memory.js'
+import type {
+  AthenaUserId,
+  ConversationSummaryMemory,
+  Memory,
+} from '../memory/Memory.js'
 import type { MemoryManager } from '../memory/MemoryManager.js'
 
 const RESPONSE_TOKEN_LIMITS = {
@@ -23,14 +28,22 @@ const MAX_INJECTED_MEMORIES = 10
 /**
  * Memory types that are eligible for prompt injection at this stage.
  *
- * CONVERSATION_SUMMARY is deliberately excluded — that capability does
- * not exist yet, and excluding it explicitly (rather than by omission)
- * keeps this list honest as new memory types are added later.
+ * CONVERSATION_SUMMARY is deliberately excluded for now. Conversation
+ * summaries are stored and generated, but summary injection into normal
+ * ask() prompts is a separate future step.
  */
 const INJECTABLE_MEMORY_TYPES = new Set<Memory['type']>([
   'USER_PROFILE',
   'EXPLICIT',
 ])
+
+/**
+ * Maximum output tokens allowed for a conversation-summary generation
+ * call. Deliberately separate from RESPONSE_TOKEN_LIMITS — summarization
+ * is a different task with different length needs than a conversational
+ * answer, so it gets its own independent, fixed budget.
+ */
+const SUMMARY_TOKEN_LIMIT = 300
 
 /**
  * Athena is the central AI assistant.
@@ -52,8 +65,8 @@ export class Athena {
    *
    * `athenaUserId` identifies who the message is from at the Athena
    * platform level (see src/memory/Memory.ts). It is used here to
-   * retrieve that user's stored memories for context injection into the
-   * prompt. This step never creates or updates memories automatically —
+   * retrieve that user's stored memories for context injection into
+   * the prompt. This step never creates or updates memories automatically —
    * only Athena's existing conversation-turn storage happens as a side
    * effect of a successful call.
    */
@@ -186,8 +199,8 @@ ${lines}
    *
    * The content is trimmed before storage; empty or whitespace-only
    * content is rejected with a clear Error rather than silently stored.
-   * This never inspects or infers intent from natural language — the
-   * caller (e.g. a `/remember` command) is the explicit intent signal.
+   * This never inspects or infers intent from natural language —
+   * the caller (e.g. a `/remember` command) is the explicit intent signal.
    */
   async remember(athenaUserId: AthenaUserId, content: string): Promise<Memory> {
     const trimmedContent = content.trim()
@@ -238,5 +251,101 @@ ${lines}
     }
 
     return this.memoryManager.delete(memoryId)
+  }
+
+  // ---------------------------------------------------------------------
+  // Conversation Summary API
+  //
+  // These methods expose the deterministic conversation-summary
+  // lifecycle managed by MemoryManager. summarizeConversation() (below)
+  // is the one exception that generates content via AIProvider; the
+  // three methods here only read/write already-produced summary text.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Retrieves the conversation summary for a specific user and
+   * conversation, if one exists.
+   */
+  async getConversationSummary(
+    athenaUserId: AthenaUserId,
+    conversationId: string,
+  ): Promise<ConversationSummaryMemory | undefined> {
+    return this.memoryManager.getConversationSummary(
+      athenaUserId,
+      conversationId,
+    )
+  }
+
+  /**
+   * Creates or replaces the conversation summary for a specific
+   * user and conversation.
+   *
+   * Athena does not generate or summarize the content here.
+   * The caller provides the already-produced summary text.
+   */
+  async upsertConversationSummary(
+    athenaUserId: AthenaUserId,
+    conversationId: string,
+    content: string,
+  ): Promise<ConversationSummaryMemory> {
+    return this.memoryManager.upsertConversationSummary(
+      athenaUserId,
+      conversationId,
+      content,
+    )
+  }
+
+  /**
+   * Deletes the conversation summary for a specific user and
+   * conversation.
+   */
+  async deleteConversationSummary(
+    athenaUserId: AthenaUserId,
+    conversationId: string,
+  ): Promise<boolean> {
+    return this.memoryManager.deleteConversationSummary(
+      athenaUserId,
+      conversationId,
+    )
+  }
+
+  /**
+   * Generates an updated conversation summary from the conversation's
+   * actual stored messages (and the previous summary, if one exists),
+   * and stores the result.
+   *
+   * This is never called by ask() — it is a separate, explicitly
+   * triggered operation. It does not modify Conversation or
+   * ConversationManager state; it only reads the conversation's
+   * messages via the existing get() lookup (never getOrCreate(), which
+   * would create and store a new empty Conversation as a side effect).
+   * On provider failure, the error propagates and no summary is created
+   * or updated — a failed generation must never overwrite an existing
+   * summary with partial or missing output.
+   */
+  async summarizeConversation(
+    conversationId: string,
+    athenaUserId: AthenaUserId,
+  ): Promise<ConversationSummaryMemory> {
+    const conversation = this.conversationManager.get(conversationId)
+    const messages = conversation ? conversation.getMessages() : []
+
+    const existingSummary = await this.memoryManager.getConversationSummary(
+      athenaUserId,
+      conversationId,
+    )
+
+    const prompt = buildSummaryPrompt(existingSummary?.content, messages)
+
+    const summaryText = await this.provider.generateResponse(
+      prompt,
+      SUMMARY_TOKEN_LIMIT,
+    )
+
+    return this.memoryManager.upsertConversationSummary(
+      athenaUserId,
+      conversationId,
+      summaryText,
+    )
   }
 }

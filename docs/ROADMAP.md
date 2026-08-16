@@ -23,13 +23,16 @@
 - [x] Conversation isolation
 - [x] Error / provider handling
 
-## Phase 3 — Memory ⏳
+## Phase 3 — Memory 🚧
 
 - [x] Long-term memory
 - [x] User profiles
-- [ ] Conversation summaries
+- [x] Conversation summaries
 - [x] Memory retrieval
 - [x] Memory management
+- [ ] Automatic summary triggering
+- [ ] Conversation summary injection into prompts
+- [ ] Persistent memory storage
 
 ## Phase 4 — Tools & Services ⏳
 

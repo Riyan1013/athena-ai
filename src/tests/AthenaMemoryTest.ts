@@ -144,6 +144,7 @@ test("listMemories() returns only the requesting user's EXPLICIT memories", asyn
     type: 'CONVERSATION_SUMMARY',
     content: 'A summary, not explicit.',
     conversationId: 'conv-1',
+    sourceMessageCount: 0,
   })
   const explicitOne = await athena.remember('user-1', 'First explicit memory.')
   const explicitTwo = await athena.remember('user-1', 'Second explicit memory.')

@@ -180,6 +180,7 @@ function makeSummaryMemory(
     type: 'CONVERSATION_SUMMARY',
     content,
     conversationId,
+    sourceMessageCount: 0,
     createdAt,
     updatedAt: createdAt,
   }
@@ -252,7 +253,7 @@ test('memory section is omitted when the user has no memories', async () => {
 // 3. CONVERSATION_SUMMARY is not injected
 // ---------------------------------------------------------------------
 
-test('CONVERSATION_SUMMARY memories are not injected into the prompt', async () => {
+test('CONVERSATION_SUMMARY memories are not injected via the generic memory-list section', async () => {
   const { athena, provider, memoryManager } = makeAthenaWithInMemoryRepository()
 
   await memoryManager.create({
@@ -260,11 +261,18 @@ test('CONVERSATION_SUMMARY memories are not injected into the prompt', async () 
     type: 'EXPLICIT',
     content: 'Likes concise answers.',
   })
+  // A summary for a *different* conversation than the one being asked
+  // about, so this test isolates "does CONVERSATION_SUMMARY leak into
+  // the generic USER_PROFILE/EXPLICIT memory-list section" from the
+  // separate, dedicated conversation-summary injection mechanism
+  // (which intentionally injects a same-conversation summary — see
+  // AthenaConversationSummaryInjectionTest.ts).
   await memoryManager.create({
     ownerId: 'user-1',
     type: 'CONVERSATION_SUMMARY',
     content: 'Summary content that must not appear.',
-    conversationId: 'conv-1',
+    conversationId: 'conv-other',
+    sourceMessageCount: 0,
   })
 
   await athena.ask('conv-1', 'user-1', 'Hello there.')

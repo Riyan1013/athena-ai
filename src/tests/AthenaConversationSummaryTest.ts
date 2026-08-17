@@ -59,12 +59,14 @@ test('upsertConversationSummary() creates a summary', async () => {
     'user-1',
     'conversation-1',
     'Discussed the Athena memory architecture.',
+    4,
   )
 
   assert.equal(summary.type, 'CONVERSATION_SUMMARY')
   assert.equal(summary.ownerId, 'user-1')
   assert.equal(summary.conversationId, 'conversation-1')
   assert.equal(summary.content, 'Discussed the Athena memory architecture.')
+  assert.equal(summary.sourceMessageCount, 4)
   assert.ok(summary.id.length > 0)
 })
 
@@ -79,6 +81,7 @@ test('getConversationSummary() retrieves an existing summary', async () => {
     'user-1',
     'conversation-1',
     'Initial conversation summary.',
+    3,
   )
 
   const retrieved = await athena.getConversationSummary(
@@ -87,6 +90,7 @@ test('getConversationSummary() retrieves an existing summary', async () => {
   )
 
   assert.deepEqual(retrieved, created)
+  assert.equal(retrieved?.sourceMessageCount, 3)
 })
 
 // ---------------------------------------------------------------------
@@ -112,16 +116,19 @@ test('upsertConversationSummary() replaces existing summary content', async () =
     'user-1',
     'conversation-1',
     'Original summary.',
+    3,
   )
 
   const second = await athena.upsertConversationSummary(
     'user-1',
     'conversation-1',
     'Updated summary.',
+    7,
   )
 
   assert.equal(second.content, 'Updated summary.')
   assert.equal(second.id, first.id)
+  assert.equal(second.sourceMessageCount, 7)
 })
 
 // ---------------------------------------------------------------------
@@ -135,12 +142,14 @@ test('updating a summary preserves id, createdAt, ownerId, and conversationId', 
     'user-1',
     'conversation-1',
     'Original summary.',
+    3,
   )
 
   const second = await athena.upsertConversationSummary(
     'user-1',
     'conversation-1',
     'Updated summary.',
+    9,
   )
 
   assert.equal(second.id, first.id)
@@ -148,6 +157,12 @@ test('updating a summary preserves id, createdAt, ownerId, and conversationId', 
   assert.equal(second.ownerId, first.ownerId)
   assert.equal(second.conversationId, first.conversationId)
   assert.ok(second.updatedAt >= first.updatedAt)
+
+  // sourceMessageCount is identity-independent metadata: unlike id,
+  // createdAt, ownerId, and conversationId, it is expected to change on
+  // every update to reflect the current conversation length.
+  assert.equal(first.sourceMessageCount, 3)
+  assert.equal(second.sourceMessageCount, 9)
 })
 
 // ---------------------------------------------------------------------
@@ -161,12 +176,14 @@ test('different conversations remain independent', async () => {
     'user-1',
     'conversation-a',
     'Summary A.',
+    5,
   )
 
   const summaryB = await athena.upsertConversationSummary(
     'user-1',
     'conversation-b',
     'Summary B.',
+    8,
   )
 
   assert.notEqual(summaryA.id, summaryB.id)
@@ -183,6 +200,8 @@ test('different conversations remain independent', async () => {
 
   assert.equal(retrievedA?.content, 'Summary A.')
   assert.equal(retrievedB?.content, 'Summary B.')
+  assert.equal(retrievedA?.sourceMessageCount, 5)
+  assert.equal(retrievedB?.sourceMessageCount, 8)
 })
 
 // ---------------------------------------------------------------------
@@ -196,12 +215,14 @@ test('different users remain isolated even when conversationId is the same', asy
     'user-a',
     'conversation-shared',
     'User A summary.',
+    6,
   )
 
   await athena.upsertConversationSummary(
     'user-b',
     'conversation-shared',
     'User B summary.',
+    10,
   )
 
   const userA = await athena.getConversationSummary(
@@ -216,6 +237,8 @@ test('different users remain isolated even when conversationId is the same', asy
 
   assert.equal(userA?.content, 'User A summary.')
   assert.equal(userB?.content, 'User B summary.')
+  assert.equal(userA?.sourceMessageCount, 6)
+  assert.equal(userB?.sourceMessageCount, 10)
 })
 
 // ---------------------------------------------------------------------
@@ -229,6 +252,7 @@ test('deleteConversationSummary() deletes an existing summary', async () => {
     'user-1',
     'conversation-1',
     'Summary to delete.',
+    2,
   )
 
   const deleted = await athena.deleteConversationSummary(
@@ -272,9 +296,11 @@ test('Conversation Summary API does not call AIProvider or touch ConversationMan
     'user-1',
     'conversation-1',
     'Summary content.',
+    4,
   )
 
   assert.equal(created.type, 'CONVERSATION_SUMMARY')
+  assert.equal(created.sourceMessageCount, 4)
 
   const retrieved = await athena.getConversationSummary(
     'user-1',

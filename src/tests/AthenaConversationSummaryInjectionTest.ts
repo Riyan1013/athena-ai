@@ -139,6 +139,7 @@ test('an existing conversation summary is included in the ask() prompt, content 
     'user-1',
     'conv-1',
     'The user previously discussed their trip to Japan.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'What did we talk about?')
@@ -161,6 +162,7 @@ test('the summary section is clearly labeled', async () => {
     'user-1',
     'conv-1',
     'Some prior summary content.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -179,6 +181,7 @@ test('the summary section explicitly states it is not an instruction', async () 
     'user-1',
     'conv-1',
     'Some prior summary content.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -197,6 +200,7 @@ test('a summary belonging to another user is never injected', async () => {
     'user-b',
     'conv-1',
     "User B's private summary content.",
+    5,
   )
 
   await athena.ask('conv-1', 'user-a', 'Hello.')
@@ -218,6 +222,7 @@ test('a summary belonging to a different conversation is never injected', async 
     'user-1',
     'conv-other',
     'Summary of a completely different conversation.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -286,6 +291,7 @@ test('ask() does not modify an existing conversation summary', async () => {
     'user-1',
     'conv-1',
     'Original summary content.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -311,6 +317,7 @@ test('USER_PROFILE and EXPLICIT memory injection still works alongside summary i
     'user-1',
     'conv-1',
     'Previously discussed favorite programming languages.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -338,6 +345,7 @@ test('the conversation summary does not appear in the generic memory list sectio
     'user-1',
     'conv-1',
     'This exact summary text must appear exactly once in the prompt.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'Hello.')
@@ -379,6 +387,7 @@ test('conversation history is unaffected by summary injection', async () => {
     'user-1',
     'conv-1',
     'Some prior summary.',
+    5,
   )
 
   await athena.ask('conv-1', 'user-1', 'First message.')
@@ -407,10 +416,15 @@ test('AIProvider still receives the expected response token limit with a summary
     'user-1',
     'conv-1',
     'Some prior summary.',
+    5,
   )
 
-  // A short message resolves to the 'short' response mode / token limit
-  // (unaffected by the presence of a conversation summary).
+  // The response-mode/token-limit selected for this message is
+  // unaffected by the presence of a conversation summary — the summary
+  // only adds prompt content, it never changes determineResponseMode()'s
+  // classification of the current message. 'Hi' resolves to the
+  // 'normal' response mode (500 tokens) under the project's actual
+  // ResponseStrategy.
   await athena.ask('conv-1', 'user-1', 'Hi')
 
   assert.equal(provider.lastMaxOutputTokens, 500)

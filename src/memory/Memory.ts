@@ -70,6 +70,16 @@ export interface ConversationSummaryMemory extends BaseMemory {
 
   /** The Conversation this summary condenses. */
   readonly conversationId: string
+
+  /**
+   * The number of conversation messages represented by this summary at
+   * the time it was generated/updated. Purely descriptive metadata —
+   * Memory.ts does not itself decide anything from this value. It lets
+   * a future automatic-trigger step compare against a conversation's
+   * current message count to decide whether enough new messages have
+   * accumulated to warrant regenerating the summary.
+   */
+  readonly sourceMessageCount: number
 }
 
 /**

@@ -155,6 +155,7 @@ test('create() creates a CONVERSATION_SUMMARY memory preserving conversationId',
     type: 'CONVERSATION_SUMMARY',
     content: 'Discussed Phase 3 memory architecture.',
     conversationId: 'conv-42',
+    sourceMessageCount: 0,
   })
 
   assert.equal(created.type, 'CONVERSATION_SUMMARY')
@@ -193,6 +194,7 @@ test('create() generates unique ids across multiple memories', async () => {
     type: 'CONVERSATION_SUMMARY',
     content: 'Third memory.',
     conversationId: 'conv-1',
+    sourceMessageCount: 0,
   })
 
   const ids = [first.id, second.id, third.id]
@@ -296,6 +298,7 @@ test('update() preserves conversationId on a CONVERSATION_SUMMARY memory', async
     type: 'CONVERSATION_SUMMARY',
     content: 'Original summary.',
     conversationId: 'conv-99',
+    sourceMessageCount: 0,
   })
 
   const updated = await manager.update({
@@ -473,6 +476,7 @@ test("getUserProfile() ignores the owner's other memory types", async () => {
     type: 'CONVERSATION_SUMMARY',
     content: 'A conversation summary, not a profile.',
     conversationId: 'conv-1',
+    sourceMessageCount: 0,
   })
 
   const noProfileYet = await manager.getUserProfile('owner-1')
@@ -582,6 +586,7 @@ test("getExplicitMemories() excludes the owner's other memory types", async () =
     type: 'CONVERSATION_SUMMARY',
     content: 'A summary, not an explicit memory.',
     conversationId: 'conv-1',
+    sourceMessageCount: 0,
   })
 
   const results = await manager.getExplicitMemories('owner-1')
@@ -1031,6 +1036,7 @@ test('upsertConversationSummary() creates a summary when none exists', async () 
     'owner-1',
     'conv-1',
     'The user discussed their favorite color and hobbies.',
+    10,
   )
 
   assert.equal(created.type, 'CONVERSATION_SUMMARY')
@@ -1042,6 +1048,26 @@ test('upsertConversationSummary() creates a summary when none exists', async () 
   )
   assertValidTimestamp(created.createdAt, 'createdAt')
   assertValidTimestamp(created.updatedAt, 'updatedAt')
+})
+
+// ---------------------------------------------------------------------
+// 37b. sourceMessageCount is stored when creating a summary
+// ---------------------------------------------------------------------
+
+test('upsertConversationSummary() stores sourceMessageCount on creation', async () => {
+  const manager = makeManager()
+
+  const created = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Initial summary.',
+    7,
+  )
+
+  assert.equal(created.sourceMessageCount, 7)
+
+  const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.equal(fetched?.sourceMessageCount, 7)
 })
 
 // ---------------------------------------------------------------------
@@ -1066,6 +1092,7 @@ test('getConversationSummary() returns the existing summary', async () => {
     'owner-1',
     'conv-1',
     'Initial summary content.',
+    5,
   )
 
   const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
@@ -1083,18 +1110,48 @@ test('upsertConversationSummary() replaces content on an existing summary', asyn
     'owner-1',
     'conv-1',
     'Original summary.',
+    5,
   )
 
   const updated = await manager.upsertConversationSummary(
     'owner-1',
     'conv-1',
     'Updated summary.',
+    12,
   )
 
   assert.equal(updated.content, 'Updated summary.')
 
   const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
   assert.equal(fetched?.content, 'Updated summary.')
+})
+
+// ---------------------------------------------------------------------
+// 40b. sourceMessageCount is updated when replacing a summary
+// ---------------------------------------------------------------------
+
+test('upsertConversationSummary() updates sourceMessageCount when replacing a summary', async () => {
+  const manager = makeManager()
+
+  const original = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Original summary.',
+    5,
+  )
+  assert.equal(original.sourceMessageCount, 5)
+
+  const updated = await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'Updated summary.',
+    12,
+  )
+
+  assert.equal(updated.sourceMessageCount, 12)
+
+  const fetched = await manager.getConversationSummary('owner-1', 'conv-1')
+  assert.equal(fetched?.sourceMessageCount, 12)
 })
 
 // ---------------------------------------------------------------------
@@ -1108,12 +1165,14 @@ test('upsertConversationSummary() preserves id, createdAt, and conversationId on
     'owner-1',
     'conv-1',
     'Original summary.',
+    5,
   )
 
   const updated = await manager.upsertConversationSummary(
     'owner-1',
     'conv-1',
     'Updated summary.',
+    12,
   )
 
   assert.equal(updated.id, original.id)
@@ -1133,11 +1192,13 @@ test('summaries for different conversations of the same owner remain independent
     'owner-1',
     'conv-a',
     'Summary of conversation A.',
+    3,
   )
   const summaryB = await manager.upsertConversationSummary(
     'owner-1',
     'conv-b',
     'Summary of conversation B.',
+    8,
   )
 
   assert.notEqual(summaryA.id, summaryB.id)
@@ -1147,6 +1208,8 @@ test('summaries for different conversations of the same owner remain independent
 
   assert.equal(fetchedA?.content, 'Summary of conversation A.')
   assert.equal(fetchedB?.content, 'Summary of conversation B.')
+  assert.equal(fetchedA?.sourceMessageCount, 3)
+  assert.equal(fetchedB?.sourceMessageCount, 8)
 })
 
 // ---------------------------------------------------------------------
@@ -1160,11 +1223,13 @@ test('summaries for the same conversationId across different owners remain isola
     'owner-a',
     'conv-shared-id',
     "Owner A's summary.",
+    4,
   )
   const summaryOwnerB = await manager.upsertConversationSummary(
     'owner-b',
     'conv-shared-id',
     "Owner B's summary.",
+    9,
   )
 
   assert.notEqual(summaryOwnerA.id, summaryOwnerB.id)
@@ -1180,6 +1245,8 @@ test('summaries for the same conversationId across different owners remain isola
 
   assert.equal(fetchedForA?.content, "Owner A's summary.")
   assert.equal(fetchedForB?.content, "Owner B's summary.")
+  assert.equal(fetchedForA?.sourceMessageCount, 4)
+  assert.equal(fetchedForB?.sourceMessageCount, 9)
 })
 
 // ---------------------------------------------------------------------
@@ -1189,7 +1256,12 @@ test('summaries for the same conversationId across different owners remain isola
 test('deleteConversationSummary() deletes an existing summary and returns true', async () => {
   const manager = makeManager()
 
-  await manager.upsertConversationSummary('owner-1', 'conv-1', 'To be deleted.')
+  await manager.upsertConversationSummary(
+    'owner-1',
+    'conv-1',
+    'To be deleted.',
+    6,
+  )
 
   const result = await manager.deleteConversationSummary('owner-1', 'conv-1')
   assert.equal(result, true)
@@ -1220,11 +1292,13 @@ test('getMemories({ type: "CONVERSATION_SUMMARY" }) returns all of an owner\'s s
     'owner-1',
     'conv-a',
     'Summary of conversation A.',
+    3,
   )
   await manager.upsertConversationSummary(
     'owner-1',
     'conv-b',
     'Summary of conversation B.',
+    5,
   )
   await manager.create({
     ownerId: 'owner-1',
@@ -1255,17 +1329,20 @@ test("updating one conversation's summary does not affect another conversation's
     'owner-1',
     'conv-a',
     'Original summary of conversation A.',
+    3,
   )
   await manager.upsertConversationSummary(
     'owner-1',
     'conv-b',
     'Original summary of conversation B.',
+    3,
   )
 
   await manager.upsertConversationSummary(
     'owner-1',
     'conv-a',
     'Updated summary of conversation A.',
+    9,
   )
 
   const fetchedA = await manager.getConversationSummary('owner-1', 'conv-a')
@@ -1273,6 +1350,8 @@ test("updating one conversation's summary does not affect another conversation's
 
   assert.equal(fetchedA?.content, 'Updated summary of conversation A.')
   assert.equal(fetchedB?.content, 'Original summary of conversation B.')
+  assert.equal(fetchedA?.sourceMessageCount, 9)
+  assert.equal(fetchedB?.sourceMessageCount, 3)
 })
 
 // ---------------------------------------------------------------------

@@ -34,12 +34,16 @@ export interface CreateExplicitMemoryInput {
  *
  * `conversationId` is required here because it is required on the
  * corresponding Memory variant — the input type mirrors that.
+ * `sourceMessageCount` is required for the same reason: it is a
+ * required field on ConversationSummaryMemory, so the input that
+ * produces one must supply it — there is no meaningful default.
  */
 export interface CreateConversationSummaryMemoryInput {
   readonly ownerId: AthenaUserId
   readonly type: 'CONVERSATION_SUMMARY'
   readonly content: string
   readonly conversationId: string
+  readonly sourceMessageCount: number
 }
 
 /**
@@ -144,6 +148,7 @@ export class MemoryManager {
           type: 'CONVERSATION_SUMMARY',
           content: input.content,
           conversationId: input.conversationId,
+          sourceMessageCount: input.sourceMessageCount,
           createdAt: now,
           updatedAt: now,
         }
@@ -358,9 +363,11 @@ export class MemoryManager {
   // Exactly one CONVERSATION_SUMMARY memory exists per (ownerId,
   // conversationId) pair — a singleton scoped to a conversation rather
   // than to an owner alone, mirroring the USER_PROFILE singleton pattern
-  // above. MemoryManager only stores whatever summary content it is
-  // given; it never generates, merges, or reinterprets summary text —
-  // that responsibility belongs to a later orchestration layer.
+  // above. MemoryManager only stores whatever summary content (and
+  // sourceMessageCount metadata) it is given; it never generates,
+  // merges, or reinterprets summary text, and it never decides on its
+  // own when a summary should be regenerated — that responsibility
+  // belongs to a later orchestration/triggering layer.
   // ---------------------------------------------------------------------
 
   /**
@@ -384,16 +391,18 @@ export class MemoryManager {
    * Creates or replaces the summary for a specific owner's conversation.
    *
    * If no summary exists yet for this (ownerId, conversationId) pair,
-   * one is created. If one exists, its content is replaced wholesale and
-   * `updatedAt` is refreshed — `id`, `createdAt`, `ownerId`, and
-   * `conversationId` are preserved. This replaces the entire content
-   * rather than merging it; callers are responsible for supplying the
-   * full summary text they want stored.
+   * one is created. If one exists, its content and `sourceMessageCount`
+   * are replaced and `updatedAt` is refreshed — `id`, `createdAt`,
+   * `ownerId`, and `conversationId` are preserved. This replaces the
+   * entire content rather than merging it; callers are responsible for
+   * supplying the full summary text (and the message count it
+   * represents) they want stored.
    */
   async upsertConversationSummary(
     ownerId: AthenaUserId,
     conversationId: string,
     content: string,
+    sourceMessageCount: number,
   ): Promise<ConversationSummaryMemory> {
     const existing = await this.getConversationSummary(ownerId, conversationId)
 
@@ -401,6 +410,7 @@ export class MemoryManager {
       const updated = await this.repository.update({
         ...existing,
         content,
+        sourceMessageCount,
         updatedAt: Date.now(),
       })
 
@@ -418,6 +428,7 @@ export class MemoryManager {
       type: 'CONVERSATION_SUMMARY',
       content,
       conversationId,
+      sourceMessageCount,
     })
 
     if (created.type !== 'CONVERSATION_SUMMARY') {

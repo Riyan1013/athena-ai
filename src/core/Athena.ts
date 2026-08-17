@@ -353,17 +353,20 @@ ${conversationSummary.content}
    * user and conversation.
    *
    * Athena does not generate or summarize the content here.
-   * The caller provides the already-produced summary text.
+   * The caller provides the already-produced summary text and the
+   * number of conversation messages it represents.
    */
   async upsertConversationSummary(
     athenaUserId: AthenaUserId,
     conversationId: string,
     content: string,
+    sourceMessageCount: number,
   ): Promise<ConversationSummaryMemory> {
     return this.memoryManager.upsertConversationSummary(
       athenaUserId,
       conversationId,
       content,
+      sourceMessageCount,
     )
   }
 
@@ -418,6 +421,7 @@ ${conversationSummary.content}
       athenaUserId,
       conversationId,
       summaryText,
+      messages.length,
     )
   }
 }

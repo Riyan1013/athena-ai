@@ -1,6 +1,6 @@
 # Athena AI 
 
-Athena AI is a modular AI assistant built with **TypeScript**, **Node.js**, and **Discord.js**.
+Athena AI is a modular AI platform built with TypeScript and Node.js, currently using Discord.js as its first interface.
 
 The project is designed with scalability in mind, separating the application core, AI providers, memory system, conversation management, and platform interfaces into independent modules.
 

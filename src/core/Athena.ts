@@ -46,6 +46,18 @@ const INJECTABLE_MEMORY_TYPES = new Set<Memory['type']>([
 const SUMMARY_TOKEN_LIMIT = 300
 
 /**
+ * Number of new messages (since the conversation's last stored summary)
+ * that must accumulate before an automatic summary is triggered.
+ *
+ * "New" is measured as the conversation's current total message count
+ * minus the existing summary's `sourceMessageCount` (0 when no summary
+ * exists yet) — so the first automatic summary fires once a conversation
+ * reaches this many total messages, and each subsequent one fires once
+ * this many more messages have been added since the last summary.
+ */
+const AUTO_SUMMARY_MESSAGE_THRESHOLD = 10
+
+/**
  * Athena is the central AI assistant.
  *
  * Athena prepares prompts, manages conversation context,
@@ -60,15 +72,32 @@ export class Athena {
   ) {}
 
   /**
+   * In-flight automatic-summarization guard, keyed by `athenaUserId::conversationId`.
+   *
+   * The check-and-set on this Set must happen with no `await` in
+   * between (see triggerAutomaticSummaryIfNeeded()) — otherwise two
+   * rapid/consecutive ask() calls for the same conversation could both
+   * observe "not in progress" before either one records itself as
+   * in-progress, and both would go on to call summarizeConversation()
+   * concurrently. A plain Set is sufficient once the check-and-set is
+   * synchronous; this is the smallest safe fix, not a queue or new
+   * service.
+   */
+  private readonly automaticSummarizationInProgress = new Set<string>()
+
+  /**
    * Sends a user message within a conversation and returns
    * Athena's response.
    *
    * `athenaUserId` identifies who the message is from at the Athena
    * platform level (see src/memory/Memory.ts). It is used here to
-   * retrieve that user's stored memories for context injection into
-   * the prompt. This step never creates or updates memories automatically —
-   * only Athena's existing conversation-turn storage happens as a side
-   * effect of a successful call.
+   * retrieve that user's stored memories and conversation summary for
+   * context injection into the prompt. ask() itself never creates or
+   * updates EXPLICIT or USER_PROFILE memories. It commits the normal
+   * conversation turn synchronously, then — without delaying its return
+   * value — may trigger an automatic conversation-summary update in the
+   * background once enough new messages have accumulated; see
+   * triggerAutomaticSummaryIfNeeded().
    */
   async ask(
     conversationId: string,
@@ -104,7 +133,82 @@ export class Athena {
     conversation.addMessage('user', message)
     conversation.addMessage('assistant', response)
 
+    // Fire-and-forget: the normal response must not wait for automatic
+    // summarization. Errors are caught and logged inside the helper
+    // itself, so this .catch() is a final backstop against an unhandled
+    // rejection — it should never actually be reached in practice.
+    this.triggerAutomaticSummaryIfNeeded(conversationId, athenaUserId).catch(
+      (error) => {
+        console.error(
+          `Unexpected error from automatic summary trigger for conversationId "${conversationId}":`,
+          error,
+        )
+      },
+    )
+
     return response
+  }
+
+  /**
+   * Checks whether enough new messages have accumulated since the
+   * conversation's last stored summary and, if so, triggers a
+   * background summary update by reusing summarizeConversation().
+   *
+   * Never awaited by ask() — this runs after ask()'s response is
+   * already being returned to the caller. Failures are caught and
+   * logged here (matching the project's existing console.error
+   * convention for background/degraded-path failures) and never
+   * propagate to affect the normal response.
+   *
+   * Concurrency: the in-progress guard is checked AND set synchronously
+   * (has() immediately followed by add(), with no `await` between them)
+   * before any asynchronous work begins. This closes the race where two
+   * rapid/consecutive ask() calls for the same (athenaUserId,
+   * conversationId) pair could otherwise both observe "not in progress"
+   * — since neither has awaited anything yet at that point, only one
+   * call can win the synchronous has()/add() step; the other returns
+   * immediately. The key is always released in a `finally`, regardless
+   * of whether the threshold check failed, summarization succeeded, or
+   * it threw.
+   */
+  private async triggerAutomaticSummaryIfNeeded(
+    conversationId: string,
+    athenaUserId: AthenaUserId,
+  ): Promise<void> {
+    const key = `${athenaUserId}::${conversationId}`
+
+    if (this.automaticSummarizationInProgress.has(key)) {
+      return
+    }
+    this.automaticSummarizationInProgress.add(key)
+
+    try {
+      const conversation = this.conversationManager.get(conversationId)
+      const currentMessageCount = conversation
+        ? conversation.getMessages().length
+        : 0
+
+      const existingSummary = await this.memoryManager.getConversationSummary(
+        athenaUserId,
+        conversationId,
+      )
+      const sourceMessageCount = existingSummary?.sourceMessageCount ?? 0
+
+      const newMessagesSinceSummary = currentMessageCount - sourceMessageCount
+
+      if (newMessagesSinceSummary < AUTO_SUMMARY_MESSAGE_THRESHOLD) {
+        return
+      }
+
+      await this.summarizeConversation(conversationId, athenaUserId)
+    } catch (error) {
+      console.error(
+        `Automatic conversation summarization failed for athenaUserId "${athenaUserId}", conversationId "${conversationId}":`,
+        error,
+      )
+    } finally {
+      this.automaticSummarizationInProgress.delete(key)
+    }
   }
 
   /**
@@ -328,10 +432,7 @@ ${conversationSummary.content}
   // ---------------------------------------------------------------------
   // Conversation Summary API
   //
-  // These methods expose the deterministic conversation-summary
-  // lifecycle managed by MemoryManager. summarizeConversation() (below)
-  // is the one exception that generates content via AIProvider; the
-  // three methods here only read/write already-produced summary text.
+
   // ---------------------------------------------------------------------
 
   /**
@@ -348,14 +449,6 @@ ${conversationSummary.content}
     )
   }
 
-  /**
-   * Creates or replaces the conversation summary for a specific
-   * user and conversation.
-   *
-   * Athena does not generate or summarize the content here.
-   * The caller provides the already-produced summary text and the
-   * number of conversation messages it represents.
-   */
   async upsertConversationSummary(
     athenaUserId: AthenaUserId,
     conversationId: string,
@@ -384,20 +477,6 @@ ${conversationSummary.content}
     )
   }
 
-  /**
-   * Generates an updated conversation summary from the conversation's
-   * actual stored messages (and the previous summary, if one exists),
-   * and stores the result.
-   *
-   * This is never called by ask() — it is a separate, explicitly
-   * triggered operation. It does not modify Conversation or
-   * ConversationManager state; it only reads the conversation's
-   * messages via the existing get() lookup (never getOrCreate(), which
-   * would create and store a new empty Conversation as a side effect).
-   * On provider failure, the error propagates and no summary is created
-   * or updated — a failed generation must never overwrite an existing
-   * summary with partial or missing output.
-   */
   async summarizeConversation(
     conversationId: string,
     athenaUserId: AthenaUserId,

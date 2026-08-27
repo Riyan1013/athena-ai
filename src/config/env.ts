@@ -17,13 +17,18 @@ const envSchema = z.object({
 
   DISCORD_TOKEN: z.string().min(1),
   DISCORD_GUILD_ID: z.string().min(1),
+
+  // Optional for now: only required once persistent (PostgreSQL) memory
+  // storage is actually wired into the application bootstrap in a later
+  // checkpoint. In-memory storage remains the default until then.
+  DATABASE_URL: z.string().url().optional(),
 })
 
 // Validate environment variables.
 const parsed = envSchema.safeParse(process.env)
 
 if (!parsed.success) {
-  console.error('❌ Invalid environment configuration:')
+  console.error(' Invalid environment configuration:')
   console.error(parsed.error.format())
   process.exit(1)
 }

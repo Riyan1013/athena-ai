@@ -17,7 +17,8 @@
     "lint": "echo \"Linting will be added later\"",
     "format": "echo \"Formatting will be added later\"",
     "db:generate": "prisma generate",
-    "db:verify-connection": "tsx src/memory/postgres/verifyConnection.ts"
+    "db:verify-connection": "tsx src/memory/postgres/verifyConnection.ts",
+    "db:verify-schema": "tsx src/memory/postgres/verifyMemoriesTable.ts"
   },
   "keywords": [
     "ai",

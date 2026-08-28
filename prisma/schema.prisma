@@ -6,3 +6,24 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum MemoryType {
+  USER_PROFILE
+  EXPLICIT
+  CONVERSATION_SUMMARY
+}
+
+model Memory {
+  id                 String     @id
+  ownerId            String     @map("owner_id")
+  type               MemoryType
+  content            String
+  conversationId     String?    @map("conversation_id")
+  sourceMessageCount Int?       @map("source_message_count")
+  createdAt          BigInt     @map("created_at")
+  updatedAt          BigInt     @map("updated_at")
+
+  @@map("memories")
+  @@index([ownerId], map: "idx_memories_owner_id")
+  @@index([ownerId, conversationId], map: "idx_memories_owner_conversation")
+}

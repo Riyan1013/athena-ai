@@ -23,17 +23,19 @@
 - [x] Conversation isolation
 - [x] Error / provider handling
 
-## Phase 3 — Memory 🚧
+## Phase 3 — Memory ✅
 
-[x] Long-term memory
-[x] User profiles
-[x] Conversation summaries
-[x] Memory retrieval
-[x] Memory management
-[x] Conversation summary injection
-[x] sourceMessageCount foundation
-[x] Automatic summary triggering
-[ ] Persistent memory storage
+- [x] Long-term memory
+- [x] User profiles
+- [x] Conversation summaries
+- [x] Memory retrieval
+- [x] Memory management
+- [x] Conversation summary injection
+- [x] sourceMessageCount foundation
+- [x] Automatic summary triggering
+- [x] Persistent storage foundation
+- [x] PostgreSQL MemoryRepository
+- [x] Persistent memory integration
 
 ## Phase 4 — Tools & Services ⏳
 
@@ -53,7 +55,22 @@
 - [ ] Mobile Application
 - [ ] Desktop Application
 
-## Phase 6 — Advanced Intelligence ⏳
+## Phase 6 — Security & Production Hardening 🔐
+
+- [ ] Security architecture review
+- [ ] Authentication & authorization
+- [ ] User/conversation isolation audit
+- [ ] Input validation & abuse protection
+- [ ] Rate limiting
+- [ ] Secrets & environment security
+- [ ] Dependency vulnerability audit
+- [ ] Database security
+- [ ] Memory/AI prompt injection & poisoning review
+- [ ] Error handling & information leakage review
+- [ ] Security-focused test suite
+- [ ] Production deployment hardening
+
+## Phase 7 — Advanced Intelligence ⏳
 
 - [ ] Voice input
 - [ ] Voice output
@@ -63,7 +80,7 @@
 - [ ] Capability-based model selection
 - [ ] Multi-model task orchestration
 
-## Phase 7 — Production ⏳
+## Phase 8 — Production ⏳
 
 - [ ] Authentication
 - [ ] User accounts
@@ -77,27 +94,17 @@
 
 ## Milestones
 
-✅ Milestone 1 — Athena Foundation
-
-✅ Milestone 2 — Athena Intelligence & Conversation
-
-⬜ Milestone 3 — Memory System
-
-⬜ Milestone 4 — Tool Calling & Services
-
-⬜ Milestone 5 — Web Chat
-
-⬜ Milestone 6 — Portfolio Widget
-
-⬜ Milestone 7 — Mobile / Desktop Interfaces
-
-⬜ Milestone 8 — Voice
-
-⬜ Milestone 9 — Multiple AI Providers
-
-⬜ Milestone 10 — Intelligent Model Routing
-
-⬜ Milestone 11 — Production Deployment
+- [x] Milestone 1 — Athena Foundation
+- [x] Milestone 2 — Athena Intelligence & Conversation
+- [ ] Milestone 3 — Memory System
+- [ ] Milestone 4 — Tool Calling & Services
+- [ ] Milestone 5 — Web Chat
+- [ ] Milestone 6 — Portfolio Widget
+- [ ] Milestone 7 — Mobile / Desktop Interfaces
+- [ ] Milestone 8 — Voice
+- [ ] Milestone 9 — Multiple AI Providers
+- [ ] Milestone 10 — Intelligent Model Routing
+- [ ] Milestone 11 — Production Deployment
 
 ## Current Implementation Status
 
@@ -118,22 +125,30 @@ The deterministic Phase 3 memory foundation is implemented.
 - Discord `/remember`
 - Discord `/memories`
 - Discord `/forget`
+- PostgreSQL persistence foundation
+- Prisma PostgreSQL schema
+- PostgreSQL migrations
+- Database schema verification
 
 ### Not Yet Implemented
 
-- Persistent memory storage
-- Conversation summaries
+- PostgreSQL MemoryRepository
+- Persistent memory integration
 - Automatic memory inference
 - Semantic memory retrieval
 - Embeddings / vector search
 - Relevance-based memory ranking
 
-### Storage Limitation
+### Storage Status
 
-The current implementation uses `InMemoryMemoryRepository`.
+The current runtime implementation uses `InMemoryMemoryRepository`.
 
 Memories therefore exist only for the lifetime of the running Athena
 process and are lost when the application restarts.
 
-Persistent storage will be introduced in a later phase without changing
-the MemoryManager business-facing API.
+PostgreSQL persistent storage has been established at the schema and
+migration level, but the application has not yet been switched to the
+PostgreSQL repository.
+
+The PostgreSQL repository will be introduced without changing the
+MemoryManager business-facing API.
